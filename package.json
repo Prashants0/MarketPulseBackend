@@ -1,0 +1,41 @@
+{
+  "name": "backend",
+  "version": "1.0.0",
+  "description": "finflow backend",
+  "main": "app.js",
+  "type": "module",
+  "scripts": {
+    "dev": "tsc && nodemon",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "prashant",
+  "license": "ISC",
+  "devDependencies": {
+    "@types/express": "^4.17.21",
+    "nodemon": "^3.0.3",
+    "prisma": "^5.10.2",
+    "typescript": "^5.3.3"
+  },
+  "nodemonConfig": {
+    "watch": [
+      "src"
+    ],
+    "ext": ".ts,.js",
+    "ignore": [
+      "src/**/*.spec.ts"
+    ],
+    "exec": "tsc && node --env-file=.env --inspect=0.0.0.0 --nolazy --experimental-specifier-resolution=node dist/app.js"
+  },
+  "dependencies": {
+    "@prisma/client": "^5.10.2",
+    "@supabase/ssr": "^0.1.0",
+    "@supabase/supabase-js": "^2.39.3",
+    "cors": "^2.8.5",
+    "cron": "^3.1.7",
+    "express": "^4.18.2",
+    "fyers-api-v3": "^1.0.3",
+    "socket.io": "^4.7.5",
+    "technicalindicators": "^3.1.0",
+    "yahoo-finance2": "^2.11.1"
+  }
+}
