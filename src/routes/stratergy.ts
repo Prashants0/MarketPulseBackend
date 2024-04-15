@@ -7,6 +7,7 @@ import prisma from "../lib/prisma.js";
 export const strategyRouter = express.Router();
 
 strategyRouter.post("/backtest", async (req, res) => {
+  yahooFinance._opts.cookieJar?.removeAllCookiesSync();
   try {
     const {
       symbol,
@@ -75,6 +76,25 @@ strategyRouter.get("/getDeployedTrades", async (req, res) => {
     res.send("error fetching backtest").status(500);
     return;
   }
+});
+
+strategyRouter.post("/stopDeployment", async (req, res) => {
+  try {
+    const { strategyId } = req.body;
+    await prisma.user_trading_strategy.update({
+      where: {
+        id: strategyId,
+      },
+      data: {
+        liveStatus: false,
+      },
+    });
+  } catch (error) {
+    console.log(error);
+    res.send("error fetching backtest").status(500);
+    return;
+  }
+  res.send("success").status(200);
 });
 
 strategyRouter.post("/deploy", async (req, res) => {

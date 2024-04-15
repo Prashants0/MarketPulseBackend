@@ -3,6 +3,7 @@ import yahooFinance from "yahoo-finance2";
 import prisma from "../lib/prisma.js";
 export const symbolRouter = express.Router();
 symbolRouter.post("/get_quote", async (req, res) => {
+    yahooFinance._opts.cookieJar?.removeAllCookiesSync();
     const { symbol, exchange, type } = req.body;
     let symbolData;
     if (type == "holding") {

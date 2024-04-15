@@ -7,6 +7,7 @@ import http from "http";
 import { symbolRouter } from "./routes/symbol.js";
 import { strategyRouter } from "./routes/stratergy.js";
 import { CronJob } from "cron";
+import { liveTradeSetup } from "./lib/liveTrade.js";
 
 const app = express();
 const server = http.createServer(app);
@@ -36,9 +37,9 @@ app.use("/api/symbol", symbolRouter);
 app.use("/api/strategy", strategyRouter);
 // Start server
 const job = new CronJob(
-  "15 9 * * 1-5", // cronTime
+  "5,10,15,20,25,30,35,40,45,50,55,0 * * * *", // cronTime
   function () {
-    console.log("You will see this message every second");
+    liveTradeSetup();
   }, // onTick
   null, // onComplete
   true, // start

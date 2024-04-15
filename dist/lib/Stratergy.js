@@ -73,6 +73,7 @@ export const emaRsiStrategy = (data, targetPercentage, stopLossPercentage) => {
                 signal = "hold";
             }
         }
+        console.log(signal);
         result.push({
             time: data[i].time,
             open: data[i].open,
