@@ -4,6 +4,7 @@ import { fyersModel } from "fyers-api-v3";
 import { Broker } from "@prisma/client";
 import prisma from "../lib/prisma.js";
 import { StartPostionsSocket as StartPotionsSocket } from "../lib/fyers/postion.js";
+import { fyersSocket } from "../app.js";
 export const fyersRouter = express.Router();
 const fyers = new fyersModel();
 fyers.setAppId(FYERS_APP_ID);
@@ -61,7 +62,6 @@ fyersRouter.get("/generate-token/:userId", async (req, res) => {
 //connect fyers socket
 export const ConnectFyersSocket = (io, socket) => {
     try {
-        const fyersSocket = io.of("/fyers-socket");
         fyersSocket.on("connection", async (socket) => {
             console.log("fyers socket connected" + socket.handshake.auth.userId);
             const fyersToken = await prisma.users_broker_profile.findUnique({

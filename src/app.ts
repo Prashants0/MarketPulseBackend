@@ -46,6 +46,8 @@ const job = new CronJob(
   "system" // timezone
 );
 
+export const fyersSocket = io.of("/fyers-socket");
+
 server.listen(PORT, () => {
   console.log(`App open at URL: http://localhost:${PORT}`);
 });

@@ -2,6 +2,7 @@ import prisma from "./prisma.js";
 import yahooFinance from "yahoo-finance2";
 import { crossOverStratergy, emaRsiStrategy, emaVwapStratergy, } from "./Stratergy.js";
 import { buyOrder, sellOrder } from "./fyers/trade.js";
+import { fyersSocket } from "../app.js";
 export const liveTradeSetup = async () => {
     const liveTradeData = await prisma.user_trading_strategy.findMany();
     for (let i = 0; i < liveTradeData.length; i++) {
@@ -75,6 +76,12 @@ const liveTrade = async (strategyType, symbolId, targetPercentage, stopLossPerce
     const result = strategyResults[strategyResults.length - 1];
     if (result.signal == "buy") {
         await buyOrder(symbolInfo.symbol, quantity, user_id, symbolInfo.exchange);
+        fyersSocket.emit("live-trade", {
+            symbol: symbolInfo.symbol,
+            quantity: quantity,
+            type: 2,
+            typeName: "buy",
+        });
         await prisma.user_trading_strategy.update({
             where: {
                 id: strategyId,
@@ -86,6 +93,12 @@ const liveTrade = async (strategyType, symbolId, targetPercentage, stopLossPerce
     }
     if (result.signal == "sell") {
         await sellOrder(symbolInfo.symbol, quantity, user_id, symbolInfo.exchange);
+        fyersSocket.emit("live-trade", {
+            symbol: symbolInfo.symbol,
+            quantity: quantity,
+            type: 2,
+            typeName: "sell",
+        });
         await prisma.user_trading_strategy.update({
             where: {
                 id: strategyId,
@@ -97,6 +110,12 @@ const liveTrade = async (strategyType, symbolId, targetPercentage, stopLossPerce
     }
     if (result.signal == "hold" && !positionTaken) {
         await buyOrder(symbolInfo.symbol, quantity, user_id, symbolInfo.exchange);
+        fyersSocket.emit("live-trade", {
+            symbol: symbolInfo.symbol,
+            quantity: quantity,
+            type: 2,
+            typeName: "buy",
+        });
         await prisma.user_trading_strategy.update({
             where: {
                 id: strategyId,
