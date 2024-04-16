@@ -1,17 +1,17 @@
 import { symbol_list } from "@prisma/client";
 import prisma from "./prisma.js";
 import yahooFinance from "yahoo-finance2";
-import { emaRsiStrategy } from "./Stratergy.js";
-import { SymbolEmaRsiData } from "../types/symbolData.js";
+import {
+  crossOverStratergy,
+  emaRsiStrategy,
+  emaVwapStratergy,
+} from "./Stratergy.js";
+import { SymbolEmaRsiData, SymbolEmaVwapData } from "../types/symbolData.js";
 import { buyOrder, sellOrder } from "./fyers/trade.js";
+import { fyersSocket } from "../app.js";
 
 export const liveTradeSetup = async () => {
-  yahooFinance._opts.cookieJar?.removeAllCookiesSync();
-  const liveTradeData = await prisma.user_trading_strategy.findMany({
-    where: {
-      liveStatus: true,
-    },
-  });
+  const liveTradeData = await prisma.user_trading_strategy.findMany();
   for (let i = 0; i < liveTradeData.length; i++) {
     const user_id = liveTradeData[i].usersId;
     const strategyId = liveTradeData[i].id;
@@ -52,7 +52,7 @@ const liveTrade = async (
   stopLossPercentage: number,
   quantity: number,
   strategyId: string,
-  postionTaken: boolean,
+  positionTaken: boolean,
   user_id: string
 ) => {
   const symbolInfo: symbol_list | null = await prisma.symbol_list.findFirst({
@@ -76,6 +76,7 @@ const liveTrade = async (
   const sixMonthsAgo = new Date((currentTimestamp - secondsIn60Days) * 1000);
   const queryOptions = {
     period1: sixMonthsAgo,
+    period2: new Date((currentTimestamp - 60 * 60) * 1000),
     interval: "5m" as "5m",
   };
   const symbolData = await yahooFinance.chart(
@@ -93,7 +94,7 @@ const liveTrade = async (
       adjclose: data.adjclose ?? 0,
     };
   });
-  let strategyResults: SymbolEmaRsiData[] = [];
+  let strategyResults: SymbolEmaRsiData[] | SymbolEmaVwapData[] = [];
   if (strategyType == 3) {
     strategyResults = emaRsiStrategy(
       structedResult,
@@ -101,10 +102,31 @@ const liveTrade = async (
       -stopLossPercentage
     );
   }
+  if (strategyType == 4) {
+    strategyResults = emaVwapStratergy(
+      structedResult,
+      targetPercentage,
+      -stopLossPercentage
+    );
+  }
+  if (strategyType == 2) {
+    strategyResults = crossOverStratergy(
+      structedResult,
+      targetPercentage,
+      -stopLossPercentage
+    );
+  }
 
   const result = strategyResults[strategyResults.length - 1];
+
   if (result.signal == "buy") {
     await buyOrder(symbolInfo.symbol, quantity, user_id, symbolInfo.exchange!);
+    fyersSocket.emit("live-trade", {
+      symbol: symbolInfo.symbol,
+      quantity: quantity,
+      type: 2,
+      typeName: "buy",
+    });
     await prisma.user_trading_strategy.update({
       where: {
         id: strategyId,
@@ -116,6 +138,12 @@ const liveTrade = async (
   }
   if (result.signal == "sell") {
     await sellOrder(symbolInfo.symbol, quantity, user_id, symbolInfo.exchange!);
+    fyersSocket.emit("live-trade", {
+      symbol: symbolInfo.symbol,
+      quantity: quantity,
+      type: 2,
+      typeName: "sell",
+    });
     await prisma.user_trading_strategy.update({
       where: {
         id: strategyId,
@@ -125,8 +153,14 @@ const liveTrade = async (
       },
     });
   }
-  if (result.signal == "hold" && !postionTaken) {
+  if (result.signal == "hold" && !positionTaken) {
     await buyOrder(symbolInfo.symbol, quantity, user_id, symbolInfo.exchange!);
+    fyersSocket.emit("live-trade", {
+      symbol: symbolInfo.symbol,
+      quantity: quantity,
+      type: 2,
+      typeName: "buy",
+    });
     await prisma.user_trading_strategy.update({
       where: {
         id: strategyId,

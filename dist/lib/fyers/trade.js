@@ -35,14 +35,8 @@ export const buyOrder = async (symbol, quantity, user_id, exchange) => {
         takeProfit: 0,
         orderTag: "tag1",
     };
-    fyers
-        .place_order(reqBody)
-        .then((response) => {
-        console.log(response);
-    })
-        .catch((error) => {
-        console.log(error);
-    });
+    const res = await fyers.place_order(reqBody);
+    return res;
 };
 export const sellOrder = async (symbol, quantity, user_id, exchange) => {
     const userInfo = await prisma.users_broker_profile.findFirst({
@@ -76,13 +70,7 @@ export const sellOrder = async (symbol, quantity, user_id, exchange) => {
         takeProfit: 0,
         orderTag: "tag1",
     };
-    fyers
-        .place_order(reqBody)
-        .then((response) => {
-        console.log(response);
-    })
-        .catch((error) => {
-        console.log(error);
-    });
+    const res = await fyers.place_order(reqBody);
+    return res;
 };
 //# sourceMappingURL=trade.js.map

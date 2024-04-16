@@ -42,14 +42,8 @@ export const buyOrder = async (
     orderTag: "tag1",
   };
 
-  fyers
-    .place_order(reqBody)
-    .then((response: any) => {
-      console.log(response);
-    })
-    .catch((error: any) => {
-      console.log(error);
-    });
+  const res = await fyers.place_order(reqBody);
+  return res;
 };
 
 export const sellOrder = async (
@@ -90,12 +84,6 @@ export const sellOrder = async (
     orderTag: "tag1",
   };
 
-  fyers
-    .place_order(reqBody)
-    .then((response: any) => {
-      console.log(response);
-    })
-    .catch((error: any) => {
-      console.log(error);
-    });
+  const res = await fyers.place_order(reqBody);
+  return res;
 };

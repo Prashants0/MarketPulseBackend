@@ -4,6 +4,7 @@ import { fyersModel } from "fyers-api-v3";
 import { Broker, Prisma } from "@prisma/client";
 import prisma from "../lib/prisma.js";
 import { StartPostionsSocket as StartPotionsSocket } from "../lib/fyers/postion.js";
+import { fyersSocket } from "../app.js";
 
 export const fyersRouter = express.Router();
 
@@ -74,24 +75,26 @@ fyersRouter.get("/generate-token/:userId", async (req, res) => {
 
 //connect fyers socket
 export const ConnectFyersSocket = (io: any, socket: any) => {
-  const fyersSocket = io.of("/fyers-socket");
-
-  fyersSocket.on("connection", async (socket: any) => {
-    console.log("fyers socket connected" + socket.handshake.auth.userId);
-    const fyersToken = await prisma.users_broker_profile.findUnique({
-      where: {
-        usersId: socket.handshake.auth.userId,
-      },
+  try {
+    fyersSocket.on("connection", async (socket: any) => {
+      console.log("fyers socket connected" + socket.handshake.auth.userId);
+      const fyersToken = await prisma.users_broker_profile.findUnique({
+        where: {
+          usersId: socket.handshake.auth.userId,
+        },
+      });
+      const socketToken = FYERS_APP_ID + ":" + fyersToken?.access_token;
+      StartPotionsSocket(socketToken, fyersSocket, socket.id);
     });
-    const socketToken = FYERS_APP_ID + ":" + fyersToken?.access_token;
-    StartPotionsSocket(socketToken, fyersSocket, socket.id);
-  });
 
-  fyersSocket.use((socket: any, next: any) => {
-    if (socket.handshake.auth.userId) {
-      return next();
-    } else {
-      return next(new Error("authentication error"));
-    }
-  });
+    fyersSocket.use((socket: any, next: any) => {
+      if (socket.handshake.auth.userId) {
+        return next();
+      } else {
+        return next(new Error("authentication error"));
+      }
+    });
+  } catch (error) {
+    console.log(error);
+  }
 };

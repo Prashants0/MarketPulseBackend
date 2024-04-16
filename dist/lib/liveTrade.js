@@ -1,14 +1,9 @@
 import prisma from "./prisma.js";
 import yahooFinance from "yahoo-finance2";
-import { emaRsiStrategy } from "./Stratergy.js";
+import { crossOverStratergy, emaRsiStrategy, emaVwapStratergy, } from "./Stratergy.js";
 import { buyOrder, sellOrder } from "./fyers/trade.js";
 export const liveTradeSetup = async () => {
-    yahooFinance._opts.cookieJar?.removeAllCookiesSync();
-    const liveTradeData = await prisma.user_trading_strategy.findMany({
-        where: {
-            liveStatus: true,
-        },
-    });
+    const liveTradeData = await prisma.user_trading_strategy.findMany();
     for (let i = 0; i < liveTradeData.length; i++) {
         const user_id = liveTradeData[i].usersId;
         const strategyId = liveTradeData[i].id;
@@ -30,7 +25,7 @@ export const liveTradeSetup = async () => {
         liveTrade(strategyType, symbolId, targetPercentage, stopLossPercentage, quantity, strategyId, postionTaken, user_id);
     }
 };
-const liveTrade = async (strategyType, symbolId, targetPercentage, stopLossPercentage, quantity, strategyId, postionTaken, user_id) => {
+const liveTrade = async (strategyType, symbolId, targetPercentage, stopLossPercentage, quantity, strategyId, positionTaken, user_id) => {
     const symbolInfo = await prisma.symbol_list.findFirst({
         where: {
             id: symbolId,
@@ -52,6 +47,7 @@ const liveTrade = async (strategyType, symbolId, targetPercentage, stopLossPerce
     const sixMonthsAgo = new Date((currentTimestamp - secondsIn60Days) * 1000);
     const queryOptions = {
         period1: sixMonthsAgo,
+        period2: new Date((currentTimestamp - 60 * 60) * 1000),
         interval: "5m",
     };
     const symbolData = await yahooFinance.chart(`${symbolInfo.symbol}.${exchangeSign}`, queryOptions);
@@ -69,6 +65,12 @@ const liveTrade = async (strategyType, symbolId, targetPercentage, stopLossPerce
     let strategyResults = [];
     if (strategyType == 3) {
         strategyResults = emaRsiStrategy(structedResult, targetPercentage, -stopLossPercentage);
+    }
+    if (strategyType == 4) {
+        strategyResults = emaVwapStratergy(structedResult, targetPercentage, -stopLossPercentage);
+    }
+    if (strategyType == 2) {
+        strategyResults = crossOverStratergy(structedResult, targetPercentage, -stopLossPercentage);
     }
     const result = strategyResults[strategyResults.length - 1];
     if (result.signal == "buy") {
@@ -93,7 +95,7 @@ const liveTrade = async (strategyType, symbolId, targetPercentage, stopLossPerce
             },
         });
     }
-    if (result.signal == "hold" && !postionTaken) {
+    if (result.signal == "hold" && !positionTaken) {
         await buyOrder(symbolInfo.symbol, quantity, user_id, symbolInfo.exchange);
         await prisma.user_trading_strategy.update({
             where: {

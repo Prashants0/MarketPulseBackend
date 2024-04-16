@@ -60,24 +60,29 @@ fyersRouter.get("/generate-token/:userId", async (req, res) => {
 });
 //connect fyers socket
 export const ConnectFyersSocket = (io, socket) => {
-    const fyersSocket = io.of("/fyers-socket");
-    fyersSocket.on("connection", async (socket) => {
-        console.log("fyers socket connected" + socket.handshake.auth.userId);
-        const fyersToken = await prisma.users_broker_profile.findUnique({
-            where: {
-                usersId: socket.handshake.auth.userId,
-            },
+    try {
+        const fyersSocket = io.of("/fyers-socket");
+        fyersSocket.on("connection", async (socket) => {
+            console.log("fyers socket connected" + socket.handshake.auth.userId);
+            const fyersToken = await prisma.users_broker_profile.findUnique({
+                where: {
+                    usersId: socket.handshake.auth.userId,
+                },
+            });
+            const socketToken = FYERS_APP_ID + ":" + fyersToken?.access_token;
+            StartPotionsSocket(socketToken, fyersSocket, socket.id);
         });
-        const socketToken = FYERS_APP_ID + ":" + fyersToken?.access_token;
-        StartPotionsSocket(socketToken, fyersSocket, socket.id);
-    });
-    fyersSocket.use((socket, next) => {
-        if (socket.handshake.auth.userId) {
-            return next();
-        }
-        else {
-            return next(new Error("authentication error"));
-        }
-    });
+        fyersSocket.use((socket, next) => {
+            if (socket.handshake.auth.userId) {
+                return next();
+            }
+            else {
+                return next(new Error("authentication error"));
+            }
+        });
+    }
+    catch (error) {
+        console.log(error);
+    }
 };
 //# sourceMappingURL=fyers.js.map

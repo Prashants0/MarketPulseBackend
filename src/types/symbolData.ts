@@ -22,3 +22,16 @@ export type SymbolEmaRsiData = {
   rsi: number;
   signal: string;
 };
+
+export type SymbolEmaVwapData = {
+  time: number;
+  open: number;
+  high: number;
+  low: number;
+  close: number;
+  volume: number;
+  adjclose: number;
+  ema1: number;
+  vwap: number;
+  signal: string;
+};
